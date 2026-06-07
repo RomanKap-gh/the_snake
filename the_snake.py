@@ -59,7 +59,7 @@ class GameObject:
     def game_acceleration(cls, length_of_snake):
         """Увеличивает скорость игры.
 
-                Arg:
+        Arg:
             length_of_snake (int): Длина змейки.
         """
         if length_of_snake % 3 == 0:
@@ -147,7 +147,7 @@ class Snake(GameObject):
     def move(self, eating=False, poisoning=False):
         """Движение змейки.
 
-                Args:
+        Args:
             eating (bool): Столкновение головы змейки с яблоком.
             poisoning (bool): Столкновение головы змейки с ядом.
         """
@@ -269,6 +269,7 @@ class Snake(GameObject):
 
 class Obstacle(GameObject):
     """Класс игрового объекта "препятствие"."""
+
     def __init__(self):
         """Инициализация парметров, свойственных для объекта "препятствие"."""
         super().__init__()
@@ -356,8 +357,8 @@ class Poison(GameObject):
 def handle_keys(game_object):
     """Обрабатывает нажатие клавиш направления движения.
 
-        Arg:
-            game_object (Snake): Объект класса Snake.
+    Arg:
+        game_object (Snake): Объект класса Snake.
     """
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
