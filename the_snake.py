@@ -22,12 +22,10 @@ BOARD_BACKGROUND_COLOR = (0, 0, 0)
 BORDER_COLOR = (93, 216, 228)
 # Цвет препятствия
 OBSTACLE_COLOR = (88, 57, 39)
-
 # Цвет "ядовитой" еды
 POISON_COLOR = (255, 255, 0)
 # Цвет яблока
 APPLE_COLOR = (255, 0, 0)
-
 # Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
 
@@ -41,7 +39,6 @@ pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
-# Тут опишите все классы игры.
 class GameObject:
     """Базовый класс для всех игровых объектов"""
 
@@ -426,7 +423,7 @@ def main():
     """Выполняет основной цикл игры."""
     # Инициализация PyGame:
     pygame.init()
-    # Тут нужно создать экземпляры классов.
+
     snake = Snake()
     obstacle = Obstacle()
     poison = Poison()
