@@ -281,7 +281,6 @@ def handle_keys(game_object):
     Arg:
         game_object (Snake): Объект класса Snake.
     """
-
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
@@ -365,7 +364,6 @@ def main():
     poison = Poison()
 
     while True:
-        print(GameObject.speed_game)
         clock.tick(GameObject.speed_game)
         screen.fill((0, 0, 0))
         # Тут опишите основную логику игры.
