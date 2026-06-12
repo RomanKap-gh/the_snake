@@ -40,13 +40,13 @@ clock = pg.time.Clock()
 
 
 class GameObject:
-    '''Базовый класс для всех игровых объектов'''
+    """Базовый класс для всех игровых объектов"""
 
     speed_game = 15
     occupied_cells = [(SCREEN_CENTER_X, SCREEN_CENTER_Y)]
 
     def __init__(self):
-        '''Инициализирует базовые параметры объекта.'''
+        """Инициализирует базовые параметры объекта."""
         self.board_background_color = BOARD_BACKGROUND_COLOR
         self.border_color = BORDER_COLOR
         self.position = (SCREEN_CENTER_X, SCREEN_CENTER_Y)
@@ -54,15 +54,15 @@ class GameObject:
         self.body_color = None
 
     def draw():
-        '''Отрисовка объекта — должен быть реализован в подклассах.'''
+        """Отрисовка объекта — должен быть реализован в подклассах."""
 
     @staticmethod
     def randomize_position(snake_positions):
-        '''Задает уникальное положение объекта.
+        """Задает уникальное положение объекта.
 
         Args:
             snake_positions (list[tuple]): Координаты положения змейки.
-        '''
+        """
         while True:
             coordinate_x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
             coordinate_y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
@@ -75,21 +75,21 @@ class GameObject:
                 return new_coordinate
 
     def draw_rect(self, position):
-        '''Отображает прямоугольник с заданными параметрами
+        """Отображает прямоугольник с заданными параметрами
 
         Args:
             position (tuple): Координаты
-        '''
+        """
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, self.body_color, rect)
         pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Apple(GameObject):
-    '''Класс игрового объекта 'яблоко'.'''
+    """Класс игрового объекта 'яблоко'."""
 
     def __init__(self):
-        '''Инициализация парметров, свойственных для объекта 'яблоко'.'''
+        """Инициализация парметров, свойственных для объекта 'яблоко'."""
         super().__init__()
         self.body_color = APPLE_COLOR
         self.position = self.randomize_position(
@@ -97,7 +97,7 @@ class Apple(GameObject):
         )
 
     def draw(self):
-        '''Отрисовка объекта яблоко'''
+        """Отрисовка объекта яблоко."""
         center_of_form_x, center_of_form_y = self.position
         coord_of_center = (
             center_of_form_x + GRID_SIZE // 2,
@@ -119,10 +119,10 @@ class Apple(GameObject):
 
 
 class Snake(GameObject):
-    '''Класс игрового объекта 'змейка'.'''
+    """Класс игрового объекта 'змейка'."""
 
     def __init__(self):
-        '''Инициализация парметров, свойственных для объекта 'змейка'.'''
+        """Инициализация парметров, свойственных для объекта 'змейка'."""
         super().__init__()
         self.body_color = SNAKE_COLOR
         self.length = 1
@@ -132,16 +132,16 @@ class Snake(GameObject):
         self.last = self.positions[-1]
 
     def get_head_position(self):
-        '''Получение координат 'головы' змейки.'''
+        """Получение координат 'головы' змейки."""
         return self.positions[0]
 
     def move(self, eating=False, poisoning=False):
-        '''Движение змейки.
+        """Движение змейки.
 
         Args:
             eating (bool): Столкновение головы змейки с яблоком.
             poisoning (bool): Столкновение головы змейки с ядом.
-        '''
+        """
         (current_head_position_x,
          current_head_position_y) = self.get_head_position()
         dx, dy = self.direction
@@ -161,7 +161,7 @@ class Snake(GameObject):
             self.last = self.positions.pop()
 
     def draw(self):
-        '''Отрисовка объекта змейка.'''
+        """Отрисовка объекта змейка."""
         for position in self.positions[1:]:
             self.draw_rect(position)
 
@@ -221,11 +221,11 @@ class Snake(GameObject):
             pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
     def update_direction(self, new_direction):
-        '''Обновляет направление движения змейки после нажатия клавиши.'''
+        """Обновляет направление движения змейки после нажатия клавиши."""
         self.direction = new_direction
 
     def reset(self, apple, obstacle, poison):
-        '''Инициализирует начальные параметры игры.'''
+        """Инициализирует начальные параметры игры."""
         self.positions = [(SCREEN_CENTER_X, SCREEN_CENTER_Y)]
         self.length = 1
         self.direction = choice((UP, DOWN, LEFT, RIGHT))
@@ -237,10 +237,10 @@ class Snake(GameObject):
 
 
 class Obstacle(GameObject):
-    '''Класс игрового объекта 'препятствие'.'''
+    """Класс игрового объекта 'препятствие'."""
 
     def __init__(self):
-        '''Инициализация парметров, свойственных для объекта 'препятствие'.'''
+        """Инициализация парметров, свойственных для объекта 'препятствие'."""
         super().__init__()
         self.body_color = OBSTACLE_COLOR
         self.position = self.randomize_position(
@@ -248,15 +248,15 @@ class Obstacle(GameObject):
         )
 
     def draw(self):
-        '''Отрисовка объекта препятствие.'''
+        """Отрисовка объекта препятствие."""
         self.draw_rect(self.position)
 
 
 class Poison(GameObject):
-    '''Класс игрового объекта 'яд'.'''
+    """Класс игрового объекта 'яд'."""
 
     def __init__(self):
-        '''Инициализация парметров, свойственных для объекта 'яд'.'''
+        """Инициализация парметров, свойственных для объекта 'яд'."""
         super().__init__()
         self.body_color = POISON_COLOR
         self.position = Poison.randomize_position(
@@ -264,7 +264,7 @@ class Poison(GameObject):
         )
 
     def draw(self):
-        '''Отрисовка объекта яд.'''
+        """Отрисовка объекта яд."""
         center_of_form_x, center_of_form_y = self.position
         listpoint = [
             (center_of_form_x + GRID_SIZE // 2, center_of_form_y),
@@ -276,11 +276,11 @@ class Poison(GameObject):
 
 
 def handle_keys(game_object):
-    '''Обрабатывает нажатие клавиш направления движения.
+    """Обрабатывает нажатие клавиш направления движения.
 
     Arg:
         game_object (Snake): Объект класса Snake.
-    '''
+    """
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -298,7 +298,7 @@ def handle_keys(game_object):
 
 
 def check_eating(snake, apple):
-    '''Проверяет столкновение головы змейки и яблока.
+    """Проверяет столкновение головы змейки и яблока.
 
     Args:
         snake (Snake): Объект класса Snake.
@@ -306,7 +306,7 @@ def check_eating(snake, apple):
 
     Returns:
         bool: Было ли столкновение.
-    '''
+    """
     if snake.get_head_position() == apple.position:
         snake.move(eating=True)
         GameObject.occupied_cells.remove(apple.position)
@@ -318,7 +318,7 @@ def check_eating(snake, apple):
 
 
 def check_poisoning(snake, apple, obstacle, poison):
-    '''Проверяет столкновение головы змейки и яда.
+    """Проверяет столкновение головы змейки и яда.
 
     Args:
         snake (Snake): Объект класса Snake.
@@ -328,7 +328,7 @@ def check_poisoning(snake, apple, obstacle, poison):
 
     Returns:
         bool: Было ли столкновение.
-    '''
+    """
     if snake.get_head_position() == poison.position:
         if snake.length == 1:
             snake.reset(apple, obstacle, poison)
@@ -340,14 +340,14 @@ def check_poisoning(snake, apple, obstacle, poison):
 
 
 def check_collision(snake, apple, obstacle, poison):
-    '''Проверяет столкновение головы змейки с совим "телом" и препятствием.
+    """Проверяет столкновение головы змейки с совим "телом" и препятствием.
 
     Args:
         snake (Snake): Объект класса Snake.
         apple (Apple): Объект класса Apple.
         obstacle (Obstacle): Объект класса Obstacle.
         poison (Poison): Объект класса Poison.
-    '''
+    """
     if (snake.get_head_position() in snake.positions[1:]
             or snake.get_head_position() == obstacle.position):
         snake.reset(apple, obstacle, poison)
@@ -355,7 +355,7 @@ def check_collision(snake, apple, obstacle, poison):
 
 
 def main():
-    '''Выполняет основной цикл игры.'''
+    """Выполняет основной цикл игры."""
     # Инициализация pg:
     pg.init()
 
