@@ -1,7 +1,7 @@
 from random import choice, randint
 
 import pygame as pg
-
+########################################
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -45,13 +45,12 @@ clock = pg.time.Clock()
 class GameObject:
     """Базовый класс для всех игровых объектов"""
 
-    def __init__(self):
+    def __init__(self, body_color=None):
         """Инициализирует базовые параметры объекта."""
         self.board_background_color = BOARD_BACKGROUND_COLOR
         self.border_color = BORDER_COLOR
         self.position = (SCREEN_CENTER_X, SCREEN_CENTER_Y)
-        # Задаю цвет в явном виде, т.к. есть проверка PyTest
-        self.body_color = None
+        self.body_color = body_color
 
     def draw():
         """Отрисовка объекта — должен быть реализован в подклассах."""
@@ -70,10 +69,9 @@ class GameObject:
 class Apple(GameObject):
     """Класс игрового объекта 'яблоко'."""
 
-    def __init__(self, occupied_cells=None):
+    def __init__(self, body_color=None, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'яблоко'."""
-        super().__init__()
-        self.body_color = APPLE_COLOR
+        super().__init__(body_color)
         self.position = self.randomize_position(occupied_cells)
 
     def draw(self):
@@ -112,17 +110,7 @@ class Apple(GameObject):
             coordinate_y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             new_coordinate = (coordinate_x, coordinate_y)
             if occupied_cells is not None:
-                match_position = False
-                for position in occupied_cells:
-                    if isinstance(position, list):
-                        for point in position:
-                            if new_coordinate == point:
-                                match_position = True
-                    elif new_coordinate == position:
-                        match_position = True
-                    if match_position:
-                        break
-                if match_position:
+                if new_coordinate in occupied_cells:
                     continue
             return new_coordinate
 
@@ -130,15 +118,15 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Класс игрового объекта 'змейка'."""
 
-    def __init__(self):
+    def __init__(self, body_color=None):
         """Инициализация парметров, свойственных для объекта 'змейка'."""
-        super().__init__()
-        self.body_color = SNAKE_COLOR
+        super().__init__(body_color)
         self.length = 1
         self.direction = RIGHT
         self.next_direction = None
         self.positions = [START_SNAKE_POSITION]
         self.last = self.positions[-1]
+        self.old_positions = None
 
     def get_head_position(self):
         """Получение координат 'головы' змейки."""
@@ -243,10 +231,9 @@ class Snake(GameObject):
 class Obstacle(Apple):
     """Класс игрового объекта 'препятствие'."""
 
-    def __init__(self, occupied_cells=None):
+    def __init__(self, body_color, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'препятствие'."""
-        super().__init__(occupied_cells)
-        self.body_color = OBSTACLE_COLOR
+        super().__init__(body_color, occupied_cells)
 
     def draw(self):
         """Отрисовка объекта препятствие."""
@@ -256,10 +243,9 @@ class Obstacle(Apple):
 class Poison(Apple):
     """Класс игрового объекта 'яд'."""
 
-    def __init__(self, occupied_cells=None):
+    def __init__(self, body_color, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'яд'."""
-        super().__init__(occupied_cells)
-        self.body_color = POISON_COLOR
+        super().__init__(body_color, occupied_cells)
 
     def draw(self):
         """Отрисовка объекта яд."""
@@ -356,7 +342,8 @@ def check_the_match_of_positions(
     Returns:
         list: Обновленный список занятых ячеек.
     """
-    occupied_cells.append(snake.positions)
+    occupied_cells.extend(snake.positions)
+    snake.old_positions = snake.positions.copy()
     if apple.position in occupied_cells:
         apple.position = Apple.randomize_position(occupied_cells)
     occupied_cells.append(apple.position)
@@ -381,8 +368,13 @@ def update_position(occupied_cells, snake, game_object):
     Returns:
         list: Обновленный список занятых ячеек.
     """
-    occupied_cells.pop(0)
-    occupied_cells.insert(0, snake.positions)
+    occupied_cells = [
+        point for point in occupied_cells
+        if point not in snake.old_positions
+    ]
+    occupied_cells.extend(snake.positions)
+    snake.old_positions.clear()
+    snake.old_positions.extend(snake.positions)
     new_position = Apple.randomize_position(occupied_cells)
     if game_object.position in occupied_cells:
         occupied_cells.remove(game_object.position)
@@ -431,10 +423,10 @@ def main():
     speed_game = 15
     occupied_cells = []
 
-    snake = Snake()
-    apple = Apple()
-    obstacle = Obstacle()
-    poison = Poison()
+    snake = Snake(SNAKE_COLOR)
+    apple = Apple(APPLE_COLOR)
+    obstacle = Obstacle(OBSTACLE_COLOR)
+    poison = Poison(POISON_COLOR)
 
     occupied_cells = check_the_match_of_positions(
         occupied_cells,
