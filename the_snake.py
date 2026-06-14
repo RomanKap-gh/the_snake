@@ -29,6 +29,9 @@ APPLE_COLOR = (255, 0, 0)
 # Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
 
+# Исходное положение змейки
+START_SNAKE_POSITION = (SCREEN_CENTER_X, SCREEN_CENTER_Y)
+
 # Настройка игрового окна:
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
@@ -42,9 +45,6 @@ clock = pg.time.Clock()
 class GameObject:
     """Базовый класс для всех игровых объектов"""
 
-    speed_game = 15
-    occupied_cells = [(SCREEN_CENTER_X, SCREEN_CENTER_Y)]
-
     def __init__(self):
         """Инициализирует базовые параметры объекта."""
         self.board_background_color = BOARD_BACKGROUND_COLOR
@@ -55,24 +55,6 @@ class GameObject:
 
     def draw():
         """Отрисовка объекта — должен быть реализован в подклассах."""
-
-    @staticmethod
-    def randomize_position(snake_positions):
-        """Задает уникальное положение объекта.
-
-        Args:
-            snake_positions (list[tuple]): Координаты положения змейки.
-        """
-        while True:
-            coordinate_x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-            coordinate_y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-            new_coordinate = (coordinate_x, coordinate_y)
-            if (new_coordinate in GameObject.occupied_cells
-                    or new_coordinate in snake_positions):
-                continue
-            else:
-                GameObject.occupied_cells.append(new_coordinate)
-                return new_coordinate
 
     def draw_rect(self, position):
         """Отображает прямоугольник с заданными параметрами
@@ -88,13 +70,11 @@ class GameObject:
 class Apple(GameObject):
     """Класс игрового объекта 'яблоко'."""
 
-    def __init__(self):
+    def __init__(self, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'яблоко'."""
         super().__init__()
         self.body_color = APPLE_COLOR
-        self.position = self.randomize_position(
-            (SCREEN_CENTER_X, SCREEN_CENTER_Y)
-        )
+        self.position = self.randomize_position(occupied_cells)
 
     def draw(self):
         """Отрисовка объекта яблоко."""
@@ -117,6 +97,35 @@ class Apple(GameObject):
             1
         )
 
+    @staticmethod
+    def randomize_position(occupied_cells):
+        """Задает уникальное положение объекта.
+
+        Args:
+            occupied_cells (list[tuple]): Координаты занятый ячеек.
+
+        Returns:
+            tuple: Положение объекта.
+        """
+        while True:
+            coordinate_x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
+            coordinate_y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+            new_coordinate = (coordinate_x, coordinate_y)
+            if occupied_cells is not None:
+                match_position = False
+                for position in occupied_cells:
+                    if isinstance(position, list):
+                        for point in position:
+                            if new_coordinate == point:
+                                match_position = True
+                    elif new_coordinate == position:
+                        match_position = True
+                    if match_position:
+                        break
+                if match_position:
+                    continue
+            return new_coordinate
+
 
 class Snake(GameObject):
     """Класс игрового объекта 'змейка'."""
@@ -128,7 +137,7 @@ class Snake(GameObject):
         self.length = 1
         self.direction = RIGHT
         self.next_direction = None
-        self.positions = [(SCREEN_CENTER_X, SCREEN_CENTER_Y)]
+        self.positions = [START_SNAKE_POSITION]
         self.last = self.positions[-1]
 
     def get_head_position(self):
@@ -224,44 +233,33 @@ class Snake(GameObject):
         """Обновляет направление движения змейки после нажатия клавиши."""
         self.direction = new_direction
 
-    def reset(self, apple, obstacle, poison):
-        """Инициализирует начальные параметры игры."""
-        self.positions = [(SCREEN_CENTER_X, SCREEN_CENTER_Y)]
+    def reset(self):
+        """Инициализирует начальные параметры объекта змейка."""
+        self.positions = [START_SNAKE_POSITION]
         self.length = 1
         self.direction = choice((UP, DOWN, LEFT, RIGHT))
-        GameObject.occupied_cells.clear()
-        obstacle.position = obstacle.randomize_position(self.positions)
-        apple.position = apple.randomize_position(self.positions)
-        poison.position = poison.randomize_position(self.positions)
-        GameObject.speed_game = 15
 
 
-class Obstacle(GameObject):
+class Obstacle(Apple):
     """Класс игрового объекта 'препятствие'."""
 
-    def __init__(self):
+    def __init__(self, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'препятствие'."""
-        super().__init__()
+        super().__init__(occupied_cells)
         self.body_color = OBSTACLE_COLOR
-        self.position = self.randomize_position(
-            (SCREEN_CENTER_X, SCREEN_CENTER_Y)
-        )
 
     def draw(self):
         """Отрисовка объекта препятствие."""
         self.draw_rect(self.position)
 
 
-class Poison(GameObject):
+class Poison(Apple):
     """Класс игрового объекта 'яд'."""
 
-    def __init__(self):
+    def __init__(self, occupied_cells=None):
         """Инициализация парметров, свойственных для объекта 'яд'."""
-        super().__init__()
+        super().__init__(occupied_cells)
         self.body_color = POISON_COLOR
-        self.position = Poison.randomize_position(
-            (SCREEN_CENTER_X, SCREEN_CENTER_Y)
-        )
 
     def draw(self):
         """Отрисовка объекта яд."""
@@ -308,49 +306,122 @@ def check_eating(snake, apple):
     """
     if snake.get_head_position() == apple.position:
         snake.move(eating=True)
-        GameObject.occupied_cells.remove(apple.position)
-        apple.position = apple.randomize_position(snake.positions)
-        if snake.length % 3 == 0:
-            GameObject.speed_game += 1
-    else:
         return True
 
 
-def check_poisoning(snake, apple, obstacle, poison):
+def check_poisoning(snake, poison):
     """Проверяет столкновение головы змейки и яда.
 
     Args:
         snake (Snake): Объект класса Snake.
-        apple (Apple): Объект класса Apple.
-        obstacle (Obstacle): Объект класса Obstacle.
         poison (Poison): Объект класса Poison.
 
     Returns:
         bool: Было ли столкновение.
     """
     if snake.get_head_position() == poison.position:
-        if snake.length == 1:
-            snake.reset(apple, obstacle, poison)
-        else:
-            snake.move(poisoning=True)
-            GameObject.occupied_cells.remove(poison.position)
-            poison.position = poison.randomize_position(snake.positions)
-            return True
+        snake.move(poisoning=True)
+        return True
 
 
-def check_collision(snake, apple, obstacle, poison):
+def check_collision(snake, obstacle):
     """Проверяет столкновение головы змейки с совим "телом" и препятствием.
 
     Args:
         snake (Snake): Объект класса Snake.
-        apple (Apple): Объект класса Apple.
         obstacle (Obstacle): Объект класса Obstacle.
-        poison (Poison): Объект класса Poison.
+    Returns:
+        bool: Было ли столкновение.
     """
     if (snake.get_head_position() in snake.positions[1:]
             or snake.get_head_position() == obstacle.position):
-        snake.reset(apple, obstacle, poison)
-        screen.fill((0, 0, 0))
+        return True
+
+
+def check_the_match_of_positions(
+    occupied_cells,
+    snake,
+    apple,
+    obstacle,
+    poison
+):
+    """Проверяет совпадение координат объектов и обновляет положение объектов.
+
+    Args:
+        occupied_cells (list): Список занятых ячеек.
+        snake (Snake): Объект класса Snake.
+        apple (Apple): Объект класса Apple.
+        obstacle (Obstacle): Объект класса Obstacle.
+        poison (Poison): Объект класса Poison.
+    Returns:
+        list: Обновленный список занятых ячеек.
+    """
+    occupied_cells.append(snake.positions)
+    if apple.position in occupied_cells:
+        apple.position = Apple.randomize_position(occupied_cells)
+    occupied_cells.append(apple.position)
+
+    if obstacle.position in occupied_cells:
+        obstacle.position = Apple.randomize_position(occupied_cells)
+    occupied_cells.append(obstacle.position)
+
+    if poison.position in occupied_cells:
+        poison.position = Apple.randomize_position(occupied_cells)
+    occupied_cells.append(poison.position)
+    return occupied_cells
+
+
+def update_position(occupied_cells, snake, object):
+    """Обновляет положение объекта после игрового действия.
+
+    Args:
+        occupied_cells (list): Список занятых ячеек.
+        snake (Snake): Объект класса Snake.
+        object (object): Объект класса.
+    Returns:
+        list: Обновленный список занятых ячеек.
+    """
+    occupied_cells.pop(0)
+    occupied_cells.insert(0, snake.positions)
+    new_position = Apple.randomize_position(occupied_cells)
+    if object.position in occupied_cells:
+        occupied_cells.remove(object.position)
+        object.position = new_position
+        occupied_cells.append(object.position)
+    return occupied_cells
+
+
+def reset_game(
+    occupied_cells,
+    snake,
+    apple,
+    obstacle,
+    poison
+):
+    """Задает начальные параметры объектов.
+
+    Args:
+        occupied_cells (list): Список занятых ячеек.
+        snake (Snake): Объект класса Snake.
+        apple (Apple): Объект класса Apple.
+        obstacle (Obstacle): Объект класса Obstacle.
+        poison (Poison): Объект класса Poison.
+    Returns:
+        list: Обновленный список занятых ячеек.
+    """
+    snake.reset()
+    occupied_cells.clear()
+    apple.position = apple.randomize_position(occupied_cells)
+    obstacle.position = obstacle.randomize_position(occupied_cells)
+    poison.position = poison.randomize_position(occupied_cells)
+    occupied_cells = check_the_match_of_positions(
+        occupied_cells,
+        snake,
+        apple,
+        obstacle,
+        poison
+    )
+    return occupied_cells
 
 
 def main():
@@ -358,19 +429,55 @@ def main():
     # Инициализация pg:
     pg.init()
 
+    speed_game = 15
+    occupied_cells = []
+
     snake = Snake()
     apple = Apple()
     obstacle = Obstacle()
     poison = Poison()
 
+    occupied_cells = check_the_match_of_positions(
+        occupied_cells,
+        snake,
+        apple,
+        obstacle,
+        poison
+    )
+
     while True:
-        clock.tick(GameObject.speed_game)
-        screen.fill((0, 0, 0))
-        # Тут опишите основную логику игры.
-        if (not check_eating(snake, apple)
-                or not check_poisoning(snake, apple, obstacle, poison)):
+        print(speed_game)
+        clock.tick(speed_game)
+        screen.fill((BOARD_BACKGROUND_COLOR))
+        if check_eating(snake, apple):
+            occupied_cells = update_position(occupied_cells, snake, apple)
+            if snake.length % 3 == 0:
+                speed_game += 1
+        elif check_collision(snake, obstacle):
+            occupied_cells = reset_game(
+                occupied_cells,
+                snake,
+                apple,
+                obstacle,
+                poison
+            )
+            speed_game = 15
+        elif check_poisoning(snake, poison):
+            if snake.length < 1:
+                occupied_cells = reset_game(
+                    occupied_cells,
+                    snake,
+                    apple,
+                    obstacle,
+                    poison
+                )
+                speed_game = 15
+            else:
+                occupied_cells = update_position(occupied_cells, snake, poison)
+                if snake.length % 3 == 0:
+                    speed_game -= 1
+        else:
             snake.move()
-        check_collision(snake, apple, obstacle, poison)
         handle_keys(snake)
         snake.draw()
         obstacle.draw()
