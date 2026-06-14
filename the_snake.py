@@ -371,7 +371,7 @@ def check_the_match_of_positions(
     return occupied_cells
 
 
-def update_position(occupied_cells, snake, object):
+def update_position(occupied_cells, snake, game_object):
     """Обновляет положение объекта после игрового действия.
 
     Args:
@@ -384,10 +384,10 @@ def update_position(occupied_cells, snake, object):
     occupied_cells.pop(0)
     occupied_cells.insert(0, snake.positions)
     new_position = Apple.randomize_position(occupied_cells)
-    if object.position in occupied_cells:
-        occupied_cells.remove(object.position)
-        object.position = new_position
-        occupied_cells.append(object.position)
+    if game_object.position in occupied_cells:
+        occupied_cells.remove(game_object.position)
+        game_object.position = new_position
+        occupied_cells.append(game_object.position)
     return occupied_cells
 
 
@@ -414,14 +414,13 @@ def reset_game(
     apple.position = apple.randomize_position(occupied_cells)
     obstacle.position = obstacle.randomize_position(occupied_cells)
     poison.position = poison.randomize_position(occupied_cells)
-    occupied_cells = check_the_match_of_positions(
+    return check_the_match_of_positions(
         occupied_cells,
         snake,
         apple,
         obstacle,
         poison
     )
-    return occupied_cells
 
 
 def main():
@@ -446,7 +445,6 @@ def main():
     )
 
     while True:
-        print(speed_game)
         clock.tick(speed_game)
         screen.fill((BOARD_BACKGROUND_COLOR))
         if check_eating(snake, apple):
